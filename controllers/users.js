@@ -100,7 +100,7 @@ usersRouter.get('/resetpassword', async (req, res) => {
     const id = user._id;
 
     if (user) {
-        res.redirect(`https://password-reset-react-app.netlify.app//updatepassword/${id}`)
+        res.redirect(`https://password-reset-react-app.netlify.app/updatepassword/${id}`)
     }
     else {
         res.status(504).json({ message: "Invalid Token" })
