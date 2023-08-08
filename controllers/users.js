@@ -55,7 +55,7 @@ usersRouter.post("/resetpassword", async (req, res) => {
     if (user) {
 
         const resetToken = await rs.alphaNumMixed(20);
-        const resetLink = `http://localhost:3001/users/resetpassword/?resetToken=${resetToken}`
+        const resetLink = `https://password-reset-node-app.onrender.com/users/resetpassword/?resetToken=${resetToken}`
 
         const EMAIL_PASS = process.env.EMAIL_PASS;
 
@@ -100,7 +100,7 @@ usersRouter.get('/resetpassword', async (req, res) => {
     const id = user._id;
 
     if (user) {
-        res.redirect(`http://localhost:3000/updatepassword/${id}`)
+        res.redirect(`https://password-reset-react-app.netlify.app//updatepassword/${id}`)
     }
     else {
         res.status(504).json({ message: "Invalid Token" })
