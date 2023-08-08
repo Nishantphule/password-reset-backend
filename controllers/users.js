@@ -140,30 +140,26 @@ usersRouter.get('/resetpassword', async (req, res) => {
 
 
 usersRouter.put('/updatepassword/:id', async (req, res) => {
+    try {
+        const data = req.body;
+        const { id } = req.params;
 
-    const data = req.body;
-    const { id } = req.params;
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+        await User.findByIdAndUpdate(
+            id,
+            {
+                password: hashedPassword,
+                updatedAt: Date.now(),
+                resetToken: null
+            },
+            { new: true })
 
-    let user = await User.findByIdAndUpdate(id, {
-        password: hashedPassword,
-        updatedAt: Date.now(),
-        resetToken: null
-    })
-    user.then((updatedUser) => {
-        if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        else {
-            res.status(201).json(updatedUser);
-        }
-
-    })
-        .catch((error) => {
-            res.status(500).json({ message: 'Internal server error' });
-        });
+        res.status(201).json({ message: "Password Reset was Successful" });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server Error' });
+    }
 
 })
 
