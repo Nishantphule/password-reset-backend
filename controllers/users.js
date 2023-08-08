@@ -16,94 +16,124 @@ usersRouter.delete("/deleteAll", async (req, res) => {
 })
 
 usersRouter.post("/register", async (req, res) => {
-    const { username, email, password } = req.body;
+    try {
+        const { username, email, password } = req.body;
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+        if (username && email && password) {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const user = new User({
-        username,
-        email,
-        password: hashedPassword
-    })
+            const user = new User({
+                username,
+                email,
+                password: hashedPassword
+            })
 
-    const savedUser = await user.save()
-    res.status(201).json({ message: 'User registered successfully', user: savedUser });
+            const savedUser = await user.save()
+            res.status(201).json({ message: 'User registered successfully', user: savedUser });
+        }
+        else {
+            res.status(504).json({ message: "Enter all details!" });
+        }
+
+    } catch (error) {
+        res.status(504).json({ message: "Internal server Error" });
+    }
 
 })
 
 usersRouter.post("/login", async (req, res) => {
-    const { username, password } = req.body;
+    try {
+        const { username, password } = req.body;
 
-    const user = await User.findOne({ username })
+        const user = await User.findOne({ username: username })
 
-    const checkPass = await bcrypt.compare(password, user.password)
-
-    if (user && checkPass) {
-        res.status(201).json({ message: 'Login successfully', user });
+        if (user) {
+            const checkPass = await bcrypt.compare(password, user.password)
+            if (checkPass) {
+                res.status(201).json({ message: 'Login successfully', user });
+            }
+            else {
+                res.status(504).json({ message: 'Invalid credentials' });
+            }
+        }
+        else {
+            res.status(504).json({ message: 'Invalid credentials' });
+        }
+    } catch (error) {
+        res.status(504).json({ message: 'Invalid credentials', error });
     }
-    else {
-        res.status(504).json({ message: 'Invalid credentials' });
-    }
+
 })
 
 usersRouter.post("/resetpassword", async (req, res) => {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-    const user = await User.findOne({ email: email })
+        const user = await User.findOne({ email: email })
 
-    if (user) {
+        if (user) {
 
-        const resetToken = await rs.alphaNumMixed(20);
-        const resetLink = `https://password-reset-node-app.onrender.com/users/resetpassword/?resetToken=${resetToken}`
+            const resetToken = await rs.alphaNumMixed(20);
+            const resetLink = `https://password-reset-node-app.onrender.com/users/resetpassword/?resetToken=${resetToken}`
 
-        const EMAIL_PASS = process.env.EMAIL_PASS;
+            const EMAIL_PASS = process.env.EMAIL_PASS;
 
-        const transporter = await nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'nishantphule12@gmail.com',
-                pass: EMAIL_PASS
-            }
-        });
+            const transporter = await nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: 'nishantphule12@gmail.com',
+                    pass: EMAIL_PASS
+                }
+            });
 
-        const mailOptions = {
-            from: 'nishantphule12@gmail.com', // sender address
-            to: email, // list of receivers
-            text: ` Click the link to reset password ${resetLink}`,
-            html: ` Click the link to reset password <a href=${resetLink}>Click here</a></h2>`
-        };
+            const mailOptions = {
+                from: 'nishantphule12@gmail.com', // sender address
+                to: email, // list of receivers
+                text: ` Click the link to reset password ${resetLink}`,
+                html: ` Click the link to reset password <a href=${resetLink}>Click here</a></h2>`
+            };
 
-        await transporter.sendMail(mailOptions, function (err, info) {
-            if (err)
-                console.log(err)
-            else
-                console.log(info);
-        });
+            await transporter.sendMail(mailOptions, function (err, info) {
+                if (err)
+                    console.log(err)
+                else
+                    console.log(info);
+            });
 
-        user.resetToken = resetToken;
-        await user.save()
-        res.status(201).json({ message: 'Check your email' });
+            user.resetToken = resetToken;
+            await user.save()
+            res.status(201).json({ message: 'Check your email' });
+        }
+        else {
+            res.status(504).json({ message: 'Invalid Email' });
+        }
+    } catch (error) {
+        res.status(504).json({ message: 'Internal Server Error' });
     }
-    else {
-        res.status(504).json({ message: 'Invalid Email' });
-    }
+
 })
 
 
 usersRouter.get('/resetpassword', async (req, res) => {
+    try {
 
-    const resetToken = req.query.resetToken;
+        const resetToken = req.query.resetToken;
 
-    const user = await User.findOne({ resetToken: resetToken });
+        const user = await User.findOne({ resetToken: resetToken });
 
-    const id = user._id;
+        const id = user._id;
 
-    if (user) {
-        res.redirect(`https://password-reset-react-app.netlify.app/updatepassword/${id}`)
-    }
-    else {
-        res.status(504).json({ message: "Invalid Token" })
+        if (user) {
+            res.redirect(`https://password-reset-react-app.netlify.app/updatepassword/${id}`)
+        }
+        else {
+            res.status(504).json({ message: "Invalid Token" })
+            alert({ message: "Invalid Token" })
+        }
+    } catch (error) {
+        res.status(504).json({ message: "Internal Server Error" })
+        alert({ message: "Invalid Token" })
     }
 
 })
@@ -117,21 +147,22 @@ usersRouter.put('/updatepassword/:id', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
-    const update = {
+    let user = await User.findByIdAndUpdate(id, {
         password: hashedPassword,
-        updatedAt: Date.now,
-        resetToken: ""
-    }
-
-    User.findByIdAndUpdate(id, update)
-        .then((updatedUser) => {
-            if (!updatedUser) {
-                return res.status(404).json({ error: 'User not found' });
-            }
+        updatedAt: Date.now(),
+        resetToken: null
+    })
+    user.then((updatedUser) => {
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        else {
             res.status(201).json(updatedUser);
-        })
+        }
+
+    })
         .catch((error) => {
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ message: 'Internal server error' });
         });
 
 })
