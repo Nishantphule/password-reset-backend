@@ -75,7 +75,7 @@ usersRouter.post("/resetpassword", async (req, res) => {
         if (user) {
 
             const resetToken = await rs.alphaNumMixed(20);
-            const resetLink = `https://password-reset-node-app.onrender.com/users/resetpassword/?resetToken=${resetToken}`
+            const resetLink = `https://password-reset-backend-production.up.railway.app/users/resetpassword/?resetToken=${resetToken}`
 
             const EMAIL_PASS = process.env.EMAIL_PASS;
 
