@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGO_URL)
         console.log(error)
     })
 
-app.get("/", (req,res) => {
+app.get("/", (req, res) => {
     res.status(200).json('<h1>Welcome to the App</h1>');
 })
 
@@ -31,5 +31,5 @@ app.use("/users", usersRouter);
 const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
-    console.log(`Server running on PORT ${PORT}`)
+    console.log(`Server running on PORT http://localhost:${PORT}`)
 })
